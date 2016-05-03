@@ -22,33 +22,43 @@ rng(rand_seed); %rand_gen.Seed
 %% model
 sigmoid_func = @(A) sigmf(A, [-1, 0]);
 dSigmoid_ds = @(A) A .* (1 - A);
+
 relu_func = @(A) max(0,A);
 dRelu_ds = @(A) A > 0;
-switch F_func_name
-    case 'F_NO_activation_final_layer'
-        kernel_mdl.F = @F_NO_activation_final_layer;
-        h_mdl.F = @F_NO_activation_final_layer;
-    case 'F_activation_final_layer'
-        kernel_mdl.F = @F_activation_final_layer;
-        h_mdl.F = @F_activation_final_layer;
-end
+
+Identity = @(A) A;
+dIdentity_ds = @(A) ones(size(A));
 switch train_func_name
     case 'learn_HBF1_SGD'
         error('TODO');
     case 'learn_HReLu_SGD'
-        kernel_mdl.Act = relu_func;
-        kernel_mdl.dAct_ds = dRelu_ds;
-        h_mdl.Act = relu_func;
-        h_mdl.dAct_ds = dRelu_ds;
+        Act = relu_func;
+        dAct_ds = dRelu_ds;
+        kernel_mdl.Act = Act;
+        kernel_mdl.dAct_ds = dAct_ds;
+        h_mdl.Act = Act;
+        h_mdl.dAct_ds = dAct_ds;
     case 'learn_HSig_SGD'
-        kernel_mdl.Act = sigmoid_func;
-        kernel_mdl.dAct_ds = dSigmoid_ds;
-        h_mdl.Act = sigmoid_func;
-        h_mdl.dAct_ds = dSigmoid_ds;
+        Act = sigmoid_func;
+        dAct_ds = dSigmoid_ds;
+        kernel_mdl.Act = Act;
+        kernel_mdl.dAct_ds = dAct_ds;
+        h_mdl.Act = Act;
+        h_mdl.dAct_ds = dAct_ds;
     otherwise
         disp('OTHERWISE');
         error('The train function you gave: %s does not exist', train_func_name);
- end
+end
+kernel_mdl.F = @F;
+h_mdl.F = @F;
+switch F_func_name
+    case 'F_NO_activation_final_layer'
+        h_mdl(2).Act = Identity;
+        h_mdl(2).dAct_ds = dIdentity_ds;
+    case 'F_activation_final_layer'
+        h_mdl(2).Act = Act;
+        h_mdl(2).dAct_ds = dAct_ds;
+end
 tic;
 if gpu_on
     X_train = gpuArray(X_train);
