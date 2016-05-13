@@ -1,13 +1,18 @@
 gau_precision = 0.005
 num_inits = 1
-nb_iterations = int64(5)
+iterations = int64(5) % nb_iterations
 batchsize = 64
+L = 2; %nb_layers
 % train_func_name = 'learn_RBF_SGD'
 % mdl_func_name = 'RBF'
 lambda = 0
+step_size_params =  struct('eta_c', {}, 'eta_t', {});
 eta_c = 0.001
 eta_t = 0.001
 eta_beta = 0.001
+step_size_params.eta_c = eta_c;
+step_size_params.eta_t = eta_t;
+step_size_params.eta_beta = eta_beta;
 visualize = 0
 sgd_errors = 1
 %% locations
@@ -15,6 +20,7 @@ F_func_name = 'F_NO_activation_final_layer'
 %F_func_name = 'F_activation_final_layer'
 train_func_name = 'learn_HBF1_SGD'
 mdl_func_name = 'HBF1'
+
 cp_folder = 'cp_2apr_ht1_HBF1/'
 cp_param_files_names = 'cp_2apr_ht1_HBF1_%d.m'
 results_path = './results/r_2apr_ht1_HBF1/'
@@ -35,7 +41,7 @@ jobs = 2
 start_centers = 10
 end_centers = 250
 %% data
-data_set_path = '../../hbf_research_data/data_MNIST_0.7_0.15_0.15_49000_10500_10500.mat'
+data_set_path = 'data_MNIST_original_minist_60k_10k_split_train_test'
 data_normalized = 0
 %% GPU
 gpu_on = 0

@@ -20,44 +20,56 @@ end
 rand_seed = get_rand_seed( slurm_job_id, task_id)
 rng(rand_seed); %rand_gen.Seed
 %% model
-sigmoid_func = @(A) sigmf(A, [-1, 0]);
-dSigmoid_ds = @(A) A .* (1 - A);
+gauss_func = @(S) exp(S);
+dGauss_ds = @(A) A;
 
 relu_func = @(A) max(0,A);
 dRelu_ds = @(A) A > 0;
 
+sigmoid_func = @(A) sigmf(A, [1, 0]);
+dSigmoid_ds = @(A) A .* (1 - A);
+
+tanh_func = @(A) tanh(A);
+dTanh_ds = @(A) 1 - A.^2;
+
 Identity = @(A) A;
 dIdentity_ds = @(A) ones(size(A));
+%% preapre model
+h_mdl = struct('W', cell(1,L),'b', cell(1,L),'F', cell(1,L), 'Act',cell(1,L),'dAct_ds',cell(1,L),'lambda', cell(1,L), 'beta', cell(1,L));
+kernel_mdl = struct('W', cell(1,L),'b', cell(1,L),'F', cell(1,L), 'Act',cell(1,L),'dAct_ds',cell(1,L),'lambda', cell(1,L));
 switch train_func_name
     case 'learn_HBF1_SGD'
-        error('TODO');
+        Act = gauss_func;
+        dAct_ds = dGauss_ds;
+        h_mdl(1).beta = beta;
     case 'learn_HReLu_SGD'
         Act = relu_func;
         dAct_ds = dRelu_ds;
-        kernel_mdl.Act = Act;
-        kernel_mdl.dAct_ds = dAct_ds;
-        h_mdl.Act = Act;
-        h_mdl.dAct_ds = dAct_ds;
     case 'learn_HSig_SGD'
         Act = sigmoid_func;
         dAct_ds = dSigmoid_ds;
-        kernel_mdl.Act = Act;
-        kernel_mdl.dAct_ds = dAct_ds;
-        h_mdl.Act = Act;
-        h_mdl.dAct_ds = dAct_ds;
+    case 'learn_HTanh_SGD'
+        Act = tanh_func;
+        dAct_ds = dTanh_ds;
     otherwise
         disp('OTHERWISE');
         error('The train function you gave: %s does not exist', train_func_name);
 end
-kernel_mdl.F = @F;
-h_mdl.F = @F;
+for l =1:L-1
+    kernel_mdl(l).Act = Act;
+    kernel_mdl(l).dAct_ds = dAct_ds;
+    h_mdl(l).Act = Act;
+    h_mdl(l).dAct_ds = dAct_ds;
+end
+kernel_mdl(1).F = @F;
+h_mdl(1).F = @F;
 switch F_func_name
     case 'F_NO_activation_final_layer'
-        h_mdl(2).Act = Identity;
-        h_mdl(2).dAct_ds = dIdentity_ds;
+        h_mdl(L).Act = Identity;
+        h_mdl(L).dAct_ds = dIdentity_ds;
     case 'F_activation_final_layer'
-        h_mdl(2).Act = Act;
-        h_mdl(2).dAct_ds = dAct_ds;
+        h_mdl(L).Act = Act;
+        h_mdl(L).dAct_ds = dAct_ds;
 end
 tic;
 if gpu_on
@@ -67,6 +79,7 @@ if gpu_on
     Y_test = gpuArray(Y_test);
 end
 K = center;
+%% statistics of data
 y_std = std(Y_train,0,2); % (D_out x 1) unbiased std of coordinate/var/feature
 y_mean = mean(Y_train,2); % (D_out x 1) mean of coordinate/var/feature
 y_std = repmat( y_std', [K,1]); % (K x D_out) for c = (K x D_out)
@@ -74,8 +87,8 @@ y_mean = repmat( y_mean', [K,1]); % (K x D_out) for c = (K x D_out)
 %% get errors of all initilization models
 error_train_all_inits = zeroes(nb_inits,1); % (nb_inits x 1)
 error_test_all_inits = zeroes(nb_inits,1); % (nb_inits x 1)
-error_train_all_interations = zeroes(nb_inits,nb_iterations+1); % (nb_inits x nb_iterations)
-error_test_all_interations = zeroes(nb_inits,nb_iterations+1); % (nb_inits x nb_iterations)
+error_train_all_iterations = zeroes(nb_inits,nb_iterations+1); % (nb_inits x nb_iterations)
+error_test_all_iterations = zeroes(nb_inits,nb_iterations+1); % (nb_inits x nb_iterations)
 all_kernel_models = cell([nb_inits,1]);
 all_h_mdl_models = cell([nb_inits,1]);
 for init_index=1:nb_inits
@@ -87,12 +100,10 @@ for init_index=1:nb_inits
         t_init = datasample(X_train', K, 'Replace', false)'; % (D x K)
     case 't_zeros_plus_eps'
         t_init = normrnd(0,epsilon_t,[D,K]); % (D x K)
+        b_init_1 = normrnd(0,epsilon_t,[1,K]);
+        b_init_2 = normrnd(0,epsilon_t,[1,D_out]);
     case 't_random_data_points_treat_offset_special'
-        %if we used normal data points all the offsets would be 1 since x=[x,1]. To avoid that we treat offset as a bit less than average inner product   
-%         t_init = datasample(X_train', K, 'Replace', false)'; % (D x K)
-%         t_mean  = norm(mean(t_init(1:D-1,:) ,2),2)^2;
-%         t_std = norm(std(t_init(1:D-1,:),0,2),2)^2;
-%         t_init(D,:) =  - normrnd(epsilon_t*t_mean - epsilon_t*t_std, t_std); % (1 x K)
+        %
         error('TODO');
     otherwise
         error('The t wieghts init that you gave is invalid var t_initilization: %s', t_initilization);
@@ -103,23 +114,27 @@ for init_index=1:nb_inits
     if gpu_on
         c_init = gpuArray(c_init);
         t_init = gpuArray(t_init);
+        b_init_1 = gpuArray(b_init_1);
+        b_init_2 = gpuArray(b_init_2);
     end
+    kernel_mdl(1).b = b_init_1;
+    kernel_mdl(1).W = t_init;
+    kernel_mdl(2).b = b_init_2;
+    kernel_mdl(2).W = c_init;    
     switch c_initilization
     case 'c_kernel_mdl_as_initilization'
+        % Get c = K\Y (soln to K*c = Y )
         switch train_func_name
             case 'learn_HBF1_SGD'
-%                 kernel_mdl = RBF(c_init,t_init,gau_precision, lambda);
-%                 %similarity_matrix = learn_RBF_linear_algebra( X_train, y_train, kernel_mdl);
-%                 similarity_matrix = produce_kernel_matrix(X_train, kernel_mdl.t, kernel_mdl.beta); % (N x K)
-%                 C = similarity_matrix \ y_train';  % (K x D) = (N x K)' x (N x D)
-%                 kernel_mdl.c = C; % (K x D)
-%                 c_init = kernel_mdl.c;
-                error('TODO');
+                fp = kernel_mdl.F(kernel_mdl, X_train); %centers are fixed
+                Kern = fp(1).A; % (K x D) = (N x K)' x (N x D)
+                kernel_mdl.c = Kern \ y_train';
+                c_init = kernel_mdl.c; % (K x D)
             case 'learn_HModel_SGD'
-                % To Solve K*c = Y <--> c = K\Y
-                similarity_matrix = [ones(batchsize,1), X_train]' * t_init; % (N x K)
-                Kern_matrix = kernel_mdl.Act( similarity_matrix ); % (N x K)
-                c_init = Kern_matrix \ Y_train';  % (K x D) = (N x K)' x (N x D)
+                fp = kernel_mdl.F(kernel_mdl, X_train); %centers are fixed
+                Kern = fp(1).A; % (K x D) = (N x K)' x (N x D)
+                kernel_mdl.c = Kern \ y_train';
+                c_init = kernel_mdl.c; % (K x D)
             otherwise
                 disp('OTHERWISE');
                 error('The train function you gave: %s does not exist', train_func_name);
@@ -145,11 +160,26 @@ for init_index=1:nb_inits
     %% train H mdl
     switch train_func_name
     case 'learn_HBF1_SGD'
-%         mdl = HBF1(c_init,t_init,gau_precision,lambda);
-%         [ mdl, iteration_errors_train, iteration_errors_test ] = learn_HBF1_SGD( X_train, y_train, mdl, iterations,visualize, X_test,y_test, eta_c,eta_t,eta_beta, sgd_errors);
+         mdl = HBF1(c_init,t_init,gau_precision,lambda);
+         h_mdl(1).W = t_init;
+         h_mdl(1).b = zeros([1,K]);
+         h_mdl(2).W = c_init;
+         h_mdl(1).b = zeros([1,D_out]);
+         for l=1:L
+             h_mdl(l).beta = gau_precision;
+             h_mdl(l).lambda = lambda;
+         end
+         [ mdl, iteration_errors_train, iteration_errors_test ] = learn_HBF1_SGD( X_train, y_train, mdl, iterations,visualize, X_test,y_test, eta_c,eta_t,eta_beta, sgd_errors);
     case 'learn_HReLu_SGD'
-        h_mdl.t = t_init;
-        h_mdl.c = c_init;
+         h_mdl(1).W = t_init;
+         h_mdl(1).b = b_init_1;
+         h_mdl(2).W = c_init;
+         h_mdl(1).b = b_init_2;
+         for l=1:L
+             h_mdl(l).beta = gau_precision;
+             h_mdl(l).lambda = lambda;
+         end
+        [ mdl, iteration_errors_train, iteration_errors_test ] = multilayer_learn_HModel_explicit_b_MiniBatchSGD( X_train,Y_train, mdl, iterations,batchsize, X_test,Y_test, step_size_params, sgd_errors );
         [ mdl, iteration_errors_train, iteration_errors_test ] = learn_HModel_MiniBatchSGD( X_train, Y_train, mdl, iterations,visualize, X_test,Y_test, eta_c, eta_t, sgd_errors);
     otherwise
        error('The train function you gave: %s does not exist', train_func_name);
@@ -179,8 +209,8 @@ for init_index=1:nb_inits
             error('The train function you gave: %s does not exist', train_func_name);
     end
     %% Collect model informationm (error & 
-    error_train_all_interations(init_index) = compute_Hf_sq_error(X_train, Y_train, mdl, mdl.lambda ); % (K x nb_inits)
-    error_test_all_interations(init_index) = compute_Hf_sq_error(X_test, Y_test, mdl, mdl.lambda );
+    error_train_all_iterations(init_index) = compute_Hf_sq_error(X_train, Y_train, mdl, mdl.lambda ); % (K x nb_inits)
+    error_test_all_iterations(init_index) = compute_Hf_sq_error(X_test, Y_test, mdl, mdl.lambda );
     all_kernel_models{init_index} = kernel_mdl;
     all_kernel_models{init_index} = h_mdl;
 end
