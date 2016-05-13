@@ -1,6 +1,6 @@
 gau_precision = 0.005
-nb_inits = 1
-nb_iterations = int64(5) % nb_iterations
+num_inits = 1
+iterations = int64(5) % nb_iterations
 batchsize = 64
 L = 2; %nb_layers
 % train_func_name = 'learn_RBF_SGD'
@@ -37,7 +37,7 @@ jobs = 2
 start_centers = 10
 end_centers = 250
 %% data
-data_set_file_name = 'data_MNIST_original_minist_60k_10k_split_train_test'
+data_set_path = 'data_MNIST_original_minist_60k_10k_split_train_test'
 data_normalized = 0
 %% GPU
 gpu_on = 0

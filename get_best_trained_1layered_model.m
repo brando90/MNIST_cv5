@@ -4,7 +4,7 @@ slurm_job_id
 task_id
 %% load the path to configs for this simulation
 run('./simulation_config.m');
-run('load_paths.m');
+run('load_paths_multilayer.m');
 %% load most of the configs for this model
 current_simulation_config = sprintf( './changing_params/%s%s', cp_folder, 'simulation_config.m' )
 run(current_simulation_config);
@@ -12,6 +12,7 @@ run(current_simulation_config);
 changing_params_for_current_task = sprintf( sprintf('./changing_params/%s%s',cp_folder,cp_param_files_names), task_id )
 run(changing_params_for_current_task);
 %% load data set
+data_set_path = sprintf('../../hbf_research_data/%s',data_set_file_name);
 load(data_set_path); % data4cv
 if data_normalized
     error('TODO');
@@ -84,10 +85,10 @@ y_mean = mean(Y_train,2); % (D_out x 1) mean of coordinate/var/feature
 y_std = repmat( y_std', [K,1]); % (K x D_out) for c = (K x D_out)
 y_mean = repmat( y_mean', [K,1]); % (K x D_out) for c = (K x D_out)  
 %% get errors of all initilization models
-mdl_error_train_all_inits = zeroes(nb_inits,1); % (nb_inits x 1)
-mdl_error_test_all_inits = zeroes(nb_inits,1); % (nb_inits x 1)
-error_train_all_iterations = zeroes(nb_inits,nb_iterations+1); % (nb_inits x nb_iterations)
-error_test_all_iterations = zeroes(nb_inits,nb_iterations+1); % (nb_inits x nb_iterations)
+mdl_error_train_all_inits = zeros(nb_inits,1); % (nb_inits x 1)
+mdl_error_test_all_inits = zeros(nb_inits,1); % (nb_inits x 1)
+error_train_all_iterations = zeros(nb_inits,nb_iterations+1); % (nb_inits x nb_iterations)
+error_test_all_iterations = zeros(nb_inits,nb_iterations+1); % (nb_inits x nb_iterations)
 all_kernel_models = cell([nb_inits,1]);
 all_h_mdl_models = cell([nb_inits,1]);
 for init_index=1:nb_inits
@@ -192,7 +193,7 @@ for init_index=1:nb_inits
              h_mdl(l).beta = gau_precision;
              h_mdl(l).lambda = lambda;
          end
-         [ h_mdl, iteration_errors_train, iteration_errors_test ] = learn_HBF1_SGD( X_train, y_train, h_mdl, iterations,visualize, X_test,y_test, eta_c,eta_t,eta_beta, sgd_errors);
+         [ h_mdl, iteration_errors_train, iteration_errors_test ] = learn_HBF1_SGD( X_train, y_train, h_mdl, nb_iterations,visualize, X_test,y_test, eta_c,eta_t,eta_beta, sgd_errors);
     case 'learn_HReLu_SGD'  
         b_init_1 = normrnd(0,epsilon_t,[1,K]);
         b_init_2 = normrnd(0,epsilon_t,[1,D_out]);
@@ -204,8 +205,8 @@ for init_index=1:nb_inits
             h_mdl(l).beta = gau_precision;
             h_mdl(l).lambda = lambda;
         end
-        [ h_mdl, iteration_errors_train, iteration_errors_test ] = multilayer_learn_HModel_explicit_b_MiniBatchSGD( X_train,Y_train, h_mdl, iterations,batchsize, X_test,Y_test, step_size_params, sgd_errors );
-        %[ h_mdl, iteration_errors_train, iteration_errors_test ] = learn_HModel_MiniBatchSGD( X_train, Y_train, mdl, iterations,visualize, X_test,Y_test, eta_c, eta_t, sgd_errors);
+        [ h_mdl, iteration_errors_train, iteration_errors_test ] = multilayer_learn_HModel_explicit_b_MiniBatchSGD( X_train,Y_train, h_mdl, nb_iterations,batchsize, X_test,Y_test, step_size_params, sgd_errors );
+        %[ h_mdl, iteration_errors_train, iteration_errors_test ] = learn_HModel_MiniBatchSGD( X_train, Y_train, mdl, nb_iterations,visualize, X_test,Y_test, eta_c, eta_t, sgd_errors);
     otherwise
        error('The train function you gave: %s does not exist', train_func_name);
     end

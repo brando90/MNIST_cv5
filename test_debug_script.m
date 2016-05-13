@@ -2,8 +2,6 @@
 clear;restoredefaultpath;clear;
 %%
 slurm_job_id = randi([0 2^31],1,1);
-%jobs_to_run = randi([0 2^31],1,1);
-%slurm_job_id = -1;
 jobs_to_run = 1;
 tic;
 %parfor task_id=1:jobs_to_run
