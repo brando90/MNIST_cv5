@@ -84,8 +84,8 @@ y_mean = mean(Y_train,2); % (D_out x 1) mean of coordinate/var/feature
 y_std = repmat( y_std', [K,1]); % (K x D_out) for c = (K x D_out)
 y_mean = repmat( y_mean', [K,1]); % (K x D_out) for c = (K x D_out)  
 %% get errors of all initilization models
-error_train_all_inits = zeroes(nb_inits,1); % (nb_inits x 1)
-error_test_all_inits = zeroes(nb_inits,1); % (nb_inits x 1)
+mdl_error_train_all_inits = zeroes(nb_inits,1); % (nb_inits x 1)
+mdl_error_test_all_inits = zeroes(nb_inits,1); % (nb_inits x 1)
 error_train_all_iterations = zeroes(nb_inits,nb_iterations+1); % (nb_inits x nb_iterations)
 error_test_all_iterations = zeroes(nb_inits,nb_iterations+1); % (nb_inits x nb_iterations)
 all_kernel_models = cell([nb_inits,1]);
@@ -210,13 +210,14 @@ for init_index=1:nb_inits
        error('The train function you gave: %s does not exist', train_func_name);
     end
     %% Collect model information
-    error_train_all_inits(init_index) = compute_Hf_sq_error(X_train, Y_train, h_mdl );
-    error_test_all_inits(init_index) = compute_Hf_sq_error(X_test, Y_test, h_mdl );
+    mdl_error_train_all_inits(init_index) = compute_Hf_sq_error(X_train, Y_train, h_mdl );
+    mdl_error_test_all_inits(init_index) = compute_Hf_sq_error(X_test, Y_test, h_mdl );
     all_kernel_models{init_index} = kernel_mdl;
     all_h_mdl_models{init_index} = h_mdl;
     error_train_all_iterations(init_index, :) = iteration_errors_train;
     error_test_all_iterations(init_index, :) = iteration_errors_test;
 end
+time_passed = toc;
 %% Errors of models Gather from GPU
 %struct('W', cell(1,L),'b', cell(1,L),'F', cell(1,L), 'Act',cell(1,L),'dAct_ds',cell(1,L),'lambda', cell(1,L), 'beta', cell(1,L));
 for i=1:nb_inits
@@ -238,16 +239,22 @@ end
 [s,git_hash_string_hbf_research_data] = system('git -C ../../hbf_research_data rev-parse HEAD')
 [s,git_hash_string_hbf_research_ml_model_library] = system('git -C ../../hbf_research_ml_model_library rev-parse HEAD')
 vname=@(x) inputname(1);
-error_iterations_file_name = sprintf('test_error_vs_iterations%d',task_id);
-path_error_iterations = sprintf('%s%s',results_path,error_iterations_file_name)
-save(path_error_iterations, vname(best_train_iteration_errors_H_mdl),vname(best_test_iteration_errors_H_mdl), vname(center), vname(iterations), vname(eta_c), vname(eta_t), vname(best_H_mdl), vname(kernel_mdl), vname(rand_seed), vname(git_hash_string_mnist_cv4), vname(git_hash_string_hbf_research_data), vname(git_hash_string_hbf_research_ml_model_library) );
-%% write results to file
-result_file_name = sprintf('results_om_id%d.m',task_id);
-results_path
-result_path_file = sprintf('%s%s',results_path,result_file_name)
-[fileID,~] = fopen(result_path_file, 'w')
-fprintf(fileID, 'task_id=%d;\ncenter=%d;\ntest_error_H_mdl=%d;\ntrain_error_H_mdl=%d;\ntest_error_kernel_mdl=%d;\ntrain_error_kernel_mdl=%d;\n', task_id,center,test_error_H_mdl,train_error_H_mdl,test_error_kernel_mdl,train_error_kernel_mdl);
-time_passed = toc;
+
+file_name_mdl_error_train_test_all_inits = sprintf('error_train_test_all_inits%d',task_id);
+path_mdl_error_test_train_all_inits  = sprintf('%s%s',results_path,file_name_mdl_error_train_test_all_inits)
+save(path_mdl_error_test_train_all_inits, vname(mdl_error_train_all_inits), vname(mdl_error_test_all_inits) );
+
+file_name_mdl_error_iterations = sprintf('mdl_error_iterations%d',task_id);
+path_mdl_error_iterations = sprintf('%s%s',results_path,file_name_mdl_error_iterations)
+save(path_mdl_error_iterations, vname(error_train_all_iterations), vname(error_test_all_iterations) );
+
+file_name_mdl_all_mdls_inits = sprintf('all_mdls_inits%d',task_id);
+path_mdl_all_mdls_inits = sprintf('%s%s',results_path,file_name_mdl_all_mdls_inits)
+save(path_mdl_all_mdls_inits, vname(all_kernel_models), vname(all_h_mdl_models), vname(rand_seed), vname(iterations), vname(center));
+
+file_name_git_info = sprintf('git_info%d',task_id);
+path_git_info = sprintf('%s%s',results_path,file_name_git_info)
+save(path_git_info, vname(git_hash_string_mnist_cv4), vname(git_hash_string_hbf_research_data), vname(git_hash_string_hbf_research_ml_model_library) );
 %% save my own code
 my_self = 'get_best_trained_1layered_model.m';
 source = sprintf('./%s', my_self);
