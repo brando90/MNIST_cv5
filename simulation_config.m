@@ -18,7 +18,6 @@ step_size_params.Momentum = 0;
 
 step_size_params.Decaying = 1;
 step_size_params.step_size = 0.01;
-
 %% collect SGD iteration errors
 sgd_errors = 1
 %% locations
