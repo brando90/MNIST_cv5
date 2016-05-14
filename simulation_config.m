@@ -7,13 +7,19 @@ L = 2; %nb_layers
 % mdl_func_name = 'RBF'
 lambda = 0
 step_size_params =  struct('eta_c', cell(1), 'eta_t', cell(1), ...
-    'AdaGrad', cell(1), 'Momentum', cell(1) );
+    'AdaGrad', cell(1), 'Momentum', cell(1), ...
+    'Decaying', cell(1), 'step_size', cell(1) );
 step_size_params.eta_c = 0.001;
 step_size_params.eta_t = 0.001;
 step_size_params.eta_beta = 0.001;
-step_size_params.AdaGrad = 0
-step_size_params.Momentum = 0
 
+step_size_params.AdaGrad = 0;
+step_size_params.Momentum = 0;
+
+step_size_params.Decaying = 1;
+step_size_params.step_size = 0.01;
+
+%% collect SGD iteration errors
 sgd_errors = 1
 %% locations
 F_func_name = 'F_NO_activation_final_layer'
