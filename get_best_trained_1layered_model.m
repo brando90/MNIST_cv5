@@ -17,6 +17,17 @@ load(data_set_path); % data4cv
 if data_normalized
     error('TODO');
 end
+switch task
+    case 'autoencoder'
+        Y_train = X_train;
+        Y_test = X_test;
+    case 'regression'
+        %leave data set as is.
+    case 'classification'
+        %leave data set as is.
+    otherwise
+        error('task not defined');
+end
 %% rand seed
 rand_seed = get_rand_seed( slurm_job_id, task_id)
 rng(rand_seed); %rand_gen.Seed
@@ -79,6 +90,7 @@ if gpu_on
     Y_test = gpuArray(Y_test);
 end
 K = center;
+D_out = size(Y_train,2);
 %% statistics of data
 y_std = std(Y_train,0,2); % (D_out x 1) unbiased std of coordinate/var/feature
 y_mean = mean(Y_train,2); % (D_out x 1) mean of coordinate/var/feature
@@ -99,17 +111,8 @@ for init_index=1:nb_inits
     case 't_random_data_points'
         % selects K rows selected from X_train
         t_init = datasample(X_train, K, 'Replace', false)'; % (D x K)
-        switch offset
-            case 'have offset'
-                %TODO
-                b_init_1 = ones(1,K);
-                b_init_2 = ones(1,D_out);
-            case 'no offset'
-                b_init_1 = zeros(1,K);
-                b_init_2 = zeros(1,D_out);
-            otherwise
-                error('no valid option for offset')
-        end
+        b_init_1 = normrnd(0,epsilon_t,[1,K]);
+        b_init_2 = normrnd(0,epsilon_t,[1,D_out]);
     case 't_zeros_plus_eps'
         t_init = normrnd(0,epsilon_t,[D,K]); % (D x K)
         b_init_1 = normrnd(0,epsilon_t,[1,K]);
@@ -134,12 +137,12 @@ for init_index=1:nb_inits
     kernel_mdl(2).W = c_init; 
     switch train_func_name
         case 'learn_HBF1_SGD'
-            fp = kernel_mdl.F(kernel_mdl, X_train); %centers are fixed
+            fp = kernel_mdl(1).F(kernel_mdl, X_train); %centers are fixed
             Kern = fp(1).A; % (K x D) = (N x K)' x (N x D)
             kernel_mdl.c = Kern \ y_train';
             c_init = kernel_mdl.c; % (K x D)
         case 'learn_HModel_SGD'
-            fp = kernel_mdl.F(kernel_mdl, X_train); %centers are fixed
+            fp = kernel_mdl(1).F(kernel_mdl, X_train); %centers are fixed
             Kern = fp(1).A; % (K x D) = (N x K)' x (N x D)
             kernel_mdl.c = Kern \ y_train';
             c_init = kernel_mdl.c; % (K x D)
@@ -148,8 +151,6 @@ for init_index=1:nb_inits
             disp('OTHERWISE');
             error('The train function you gave: %s does not exist', train_func_name);
     end
-    %% b_initilization H model
-    %TODO
     %% c_initilization H model
     fprintf('c_initilization: %s\n', c_initilization);
     switch c_initilization

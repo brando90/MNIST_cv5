@@ -37,11 +37,13 @@ jobs = 2
 start_centers = 10
 end_centers = 250
 %% data
+task = 'autoencoder';
 data_set_file_name = 'data_MNIST_original_minist_60k_10k_split_train_test'
 data_normalized = 0
 %% GPU
 gpu_on = 0
 %% t_initilization
+epsilon_t = 0.01;
 t_initilization = 't_random_data_points' %datasample(X_train', K, 'Replace', false)';
 
 %epsilon_t = 0.01;
