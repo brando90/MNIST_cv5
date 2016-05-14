@@ -1,6 +1,6 @@
 gau_precision = 0.005
-num_inits = 1
-iterations = int64(5) % nb_iterations
+nb_inits = 1
+nb_iterations = int64(5) % nb_iterations
 batchsize = 64
 L = 2; %nb_layers
 % train_func_name = 'learn_RBF_SGD'
@@ -10,6 +10,9 @@ step_size_params =  struct('eta_c', cell(1), 'eta_t', cell(1));
 step_size_params.eta_c = 0.001;
 step_size_params.eta_t = 0.001;
 step_size_params.eta_beta = 0.001;
+step_size_params.AdaGrad = 0
+step_size_params.Momentum = 0
+
 sgd_errors = 1
 %% locations
 F_func_name = 'F_NO_activation_final_layer'
@@ -37,11 +40,13 @@ jobs = 2
 start_centers = 10
 end_centers = 250
 %% data
-data_set_path = 'data_MNIST_original_minist_60k_10k_split_train_test'
+task = 'autoencoder';
+data_set_file_name = 'data_MNIST_original_minist_60k_10k_split_train_test'
 data_normalized = 0
 %% GPU
 gpu_on = 0
 %% t_initilization
+epsilon_t = 0.01;
 t_initilization = 't_random_data_points' %datasample(X_train', K, 'Replace', false)';
 
 %epsilon_t = 0.01;

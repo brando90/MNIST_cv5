@@ -149,13 +149,13 @@ for init_index=1:nb_inits
             fp = kernel_mdl(1).F(kernel_mdl, X_train); %centers are fixed
             Kern = fp(1).A; % (K x D) = (N x K)' x (N x D)
             %kernel_mdl.c = Kern \ Y_train;
-            kernel_mdl.c = Kern \ Y_train;
-            c_init = kernel_mdl.c; % (K x D)
+            kernel_mdl(2).W = Kern \ Y_train;
+            c_init = kernel_mdl(2).W; % (K x D)
         case 'learn_HModel_SGD'
             fp = kernel_mdl(1).F(kernel_mdl, X_train); %centers are fixed
             Kern = fp(1).A; % (K x D) = (N x K)' x (N x D)
-            kernel_mdl.c = Kern \ Y_train';
-            c_init = kernel_mdl.c; % (K x D)
+            kernel_mdl(2).W = Kern \ Y_train';
+            c_init = kernel_mdl(2).W; % (K x D)
             
         otherwise
             disp('OTHERWISE');
@@ -168,9 +168,9 @@ for init_index=1:nb_inits
         % Get c = K\Y (soln to K*c = Y )
         switch train_func_name
             case 'learn_HBF1_SGD'
-                c_init = kernel_mdl.c; % (K x D)
+                c_init = kernel_mdl(2).W; % (K x D)
             case 'learn_HModel_SGD'
-                c_init = kernel_mdl.c; % (K x D)
+                c_init = kernel_mdl(2).W; % (K x D)
             otherwise
                 disp('OTHERWISE');
                 error('The train function you gave: %s does not exist', train_func_name);
@@ -204,7 +204,7 @@ for init_index=1:nb_inits
              h_mdl(l).beta = gau_precision;
              h_mdl(l).lambda = lambda;
          end
-         [ h_mdl, iteration_errors_train, iteration_errors_test ] = learn_HBF1_SGD( X_train, y_train, h_mdl, nb_iterations,visualize, X_test,y_test, eta_c,eta_t,eta_beta, sgd_errors);
+         [ h_mdl, iteration_errors_train, iteration_errors_test ] = multilayer_learn_HBF_MiniBatchSGD( X_train, Y_train, h_mdl, nb_iterations, batchsize, X_test,Y_test, step_size_params, sgd_errors);
     case 'learn_HReLu_SGD'  
         b_init_1 = normrnd(0,epsilon_t,[1,K]);
         b_init_2 = normrnd(0,epsilon_t,[1,D_out]);
