@@ -6,7 +6,8 @@ L = 2; %nb_layers
 % train_func_name = 'learn_RBF_SGD'
 % mdl_func_name = 'RBF'
 lambda = 0
-step_size_params =  struct('eta_c', cell(1), 'eta_t', cell(1));
+step_size_params =  struct('eta_c', cell(1), 'eta_t', cell(1), ...
+    'AdaGrad', cell(1), 'Momentum', cell(1) );
 step_size_params.eta_c = 0.001;
 step_size_params.eta_t = 0.001;
 step_size_params.eta_beta = 0.001;
