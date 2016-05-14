@@ -69,8 +69,12 @@ end
 for l =1:L-1
     kernel_mdl(l).Act = Act;
     kernel_mdl(l).dAct_ds = dAct_ds;
+    kernel_mdl(l).beta = gau_precision;
+    kernel_mdl(l).lambda = lambda;
     h_mdl(l).Act = Act;
     h_mdl(l).dAct_ds = dAct_ds;
+    h_mdl(l).beta = gau_precision;
+    h_mdl(l).lambda = lambda;
 end
 kernel_mdl(1).F = @F;
 h_mdl(1).F = @F;
@@ -78,9 +82,14 @@ switch F_func_name
     case 'F_NO_activation_final_layer'
         h_mdl(L).Act = Identity;
         h_mdl(L).dAct_ds = dIdentity_ds;
+        kernel_mdl(L).Act = Identity;
+        kernel_mdl(L).dAct_ds = dIdentity_ds;   
     case 'F_activation_final_layer'
         h_mdl(L).Act = Act;
         h_mdl(L).dAct_ds = dAct_ds;
+        kernel_mdl(L).Act = Identity;
+        kernel_mdl(L).dAct_ds = dIdentity_ds;
+        
 end
 tic;
 if gpu_on
@@ -139,12 +148,13 @@ for init_index=1:nb_inits
         case 'learn_HBF1_SGD'
             fp = kernel_mdl(1).F(kernel_mdl, X_train); %centers are fixed
             Kern = fp(1).A; % (K x D) = (N x K)' x (N x D)
-            kernel_mdl.c = Kern \ y_train';
+            %kernel_mdl.c = Kern \ Y_train;
+            kernel_mdl.c = Kern \ Y_train;
             c_init = kernel_mdl.c; % (K x D)
         case 'learn_HModel_SGD'
             fp = kernel_mdl(1).F(kernel_mdl, X_train); %centers are fixed
             Kern = fp(1).A; % (K x D) = (N x K)' x (N x D)
-            kernel_mdl.c = Kern \ y_train';
+            kernel_mdl.c = Kern \ Y_train';
             c_init = kernel_mdl.c; % (K x D)
             
         otherwise
