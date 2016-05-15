@@ -15,8 +15,9 @@ step_size_params.eta_t = 0.001;
 step_size_params.eta_beta = 0.001;
 step_size_params.AdaGrad = 0;
 step_size_params.Momentum = 0;
-step_size_params.Decaying = 1;
+step_size_params.Constant = 1;
 step_size_params.step_size = 0.01;
+step_size_params.decay_rate = 1; %if 1 its not decaying then
 %% collect SGD iteration errors
 sgd_errors = 1
 %% locations
