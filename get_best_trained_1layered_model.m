@@ -112,7 +112,7 @@ y_mean = repmat( y_mean', [K,1]); % (K x D_out) for c = (K x D_out)
 h_mdl_error_train_all_inits = zeros(nb_inits,1); % (nb_inits x 1)
 h_mdl_error_test_all_inits = zeros(nb_inits,1); % (nb_inits x 1)
 kernel_mdl_error_train_all_inits = zeros(nb_inits,1); % (nb_inits x 1)
-hkernel_mdl_error_test_all_inits = zeros(nb_inits,1); % (nb_inits x 1)
+kernel_mdl_error_test_all_inits = zeros(nb_inits,1); % (nb_inits x 1)
 error_train_all_iterations = zeros(nb_inits,nb_iterations+1); % (nb_inits x nb_iterations)
 error_test_all_iterations = zeros(nb_inits,nb_iterations+1); % (nb_inits x nb_iterations)
 all_kernel_models = cell([nb_inits,1]);
@@ -280,11 +280,11 @@ save(path_git_info, vname(git_hash_string_mnist_cv4), vname(git_hash_string_hbf_
 %means
 average_train_error_h_mdl = mean(h_mdl_error_train_all_inits); % (nb_inits x 1)
 average_test_error_h_mdl = mean(h_mdl_error_test_all_inits); % (nb_inits x 1)
-std_train_error_h_mdl = mean(h_mdl_error_train_all_inits); % (nb_inits x 1)
-std_test_error_h_mdl = mean(h_mdl_error_test_all_inits); % (nb_inits x 1)
+std_train_error_h_mdl = std(h_mdl_error_train_all_inits); % (nb_inits x 1)
+std_test_error_h_mdl = std(h_mdl_error_test_all_inits); % (nb_inits x 1)
 %std
-average_train_error_kernel_mdl = std(kernel_mdl_error_train_all_inits); % (nb_inits x 1)
-average_test_error_kernel_mdl = std(kernel_mdl_error_test_all_inits); % (nb_inits x 1)
+average_train_error_kernel_mdl = mean(kernel_mdl_error_train_all_inits); % (nb_inits x 1)
+average_test_error_kernel_mdl = mean(kernel_mdl_error_test_all_inits); % (nb_inits x 1)
 std_train_error_kernel_mdl = std(kernel_mdl_error_train_all_inits); % (nb_inits x 1)
 std_test_error_kernel_mdl = std(kernel_mdl_error_test_all_inits); % (nb_inits x 1)
 
