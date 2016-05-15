@@ -1,6 +1,6 @@
 gau_precision = 0.005
 nb_inits = 1
-nb_iterations = int64(5000) % nb_iterations
+nb_iterations = int64(5) % nb_iterations
 batchsize = 64
 L = 2; %nb_layers
 % train_func_name = 'learn_RBF_SGD'
@@ -8,16 +8,15 @@ L = 2; %nb_layers
 lambda = 0
 step_size_params =  struct('eta_c', cell(1), 'eta_t', cell(1), ...
     'AdaGrad', cell(1), 'Momentum', cell(1), ...
-    'Decaying', cell(1), 'step_size', cell(1) );
+    'Decaying', cell(1), 'step_size', cell(1), 'print_error_to_screen', cell(1) );
+step_size_params.print_error_to_screen = 0;
 step_size_params.eta_c = 0.001;
 step_size_params.eta_t = 0.001;
 step_size_params.eta_beta = 0.001;
-
 step_size_params.AdaGrad = 0;
 step_size_params.Momentum = 0;
-
 step_size_params.Decaying = 1;
-step_size_params.step_size = 0.01;
+step_size_params.step_size = 0.5;
 %% collect SGD iteration errors
 sgd_errors = 1
 %% locations

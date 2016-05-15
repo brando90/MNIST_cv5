@@ -1,7 +1,7 @@
-task_id=1;
-secs=2.987090e+00;
-minutes=4.978483e-02;
-hours=8.297472e-04;
+task_id=3;
+secs=9.158751e+00;
+minutes=1.526459e-01;
+hours=2.544098e-03;
 nb_iterations=5;
-center=10;
+center=130;
 data_set= '../../hbf_research_data/data_MNIST_original_minist_60k_10k_split_train_test' ;

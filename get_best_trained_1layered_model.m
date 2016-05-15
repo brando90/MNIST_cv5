@@ -255,19 +255,20 @@ end
 [s,git_hash_string_hbf_research_ml_model_library] = system('git -C ../../hbf_research_ml_model_library rev-parse HEAD')
 vname=@(x) inputname(1);
 
-file_name_mdl_error_train_test_all_inits = sprintf('error_train_test_all_inits%d',task_id);
+file_name_mdl_error_train_test_all_inits = sprintf('result_error_train_test_all_inits_id%d',task_id);
 path_mdl_error_test_train_all_inits  = sprintf('%s%s',results_path,file_name_mdl_error_train_test_all_inits)
-save(path_mdl_error_test_train_all_inits, vname(mdl_error_train_all_inits), vname(mdl_error_test_all_inits) );
+save(path_mdl_error_test_train_all_inits, vname(mdl_error_train_all_inits), vname(mdl_error_test_all_inits), ...
+    vname(center), vname(nb_iterations) );
 
-file_name_mdl_error_iterations = sprintf('mdl_error_iterations%d',task_id);
+file_name_mdl_error_iterations = sprintf('mdl_error_iterations_id%d',task_id);
 path_mdl_error_iterations = sprintf('%s%s',results_path,file_name_mdl_error_iterations)
 save(path_mdl_error_iterations, vname(error_train_all_iterations), vname(error_test_all_iterations) );
 
-file_name_mdl_all_mdls_inits = sprintf('all_mdls_inits%d',task_id);
+file_name_mdl_all_mdls_inits = sprintf('all_mdls_inits_id%d',task_id);
 path_mdl_all_mdls_inits = sprintf('%s%s',results_path,file_name_mdl_all_mdls_inits)
 save(path_mdl_all_mdls_inits, vname(all_kernel_models), vname(all_h_mdl_models), vname(rand_seed), vname(nb_iterations), vname(center));
 
-file_name_git_info = sprintf('git_info%d',task_id);
+file_name_git_info = sprintf('git_info_id%d',task_id);
 path_git_info = sprintf('%s%s',results_path,file_name_git_info)
 save(path_git_info, vname(git_hash_string_mnist_cv4), vname(git_hash_string_hbf_research_data), vname(git_hash_string_hbf_research_ml_model_library) );
 %% save my own code

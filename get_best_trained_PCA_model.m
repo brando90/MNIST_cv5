@@ -11,7 +11,7 @@ restoredefaultpath
 slurm_job_id
 task_id
 run('./simulation_config_pca.m');
-run('load_paths.m');
+run('load_paths_multilayer.m');
 %% load configs
 current_simulation_config = sprintf( './changing_params/%s%s', cp_folder, 'simulation_config_pca.m' )
 run(current_simulation_config);
@@ -19,10 +19,9 @@ changing_params_for_current_task = sprintf( sprintf('./changing_params/%s%s',cp_
 run(changing_params_for_current_task);
 %% load data set
 load(data_set_path); % data4cv
-if data_normalized
-    data4cv.normalize_data();
-end
-[ X_train,X_cv,X_test, y_train,y_cv,y_test ] = data4cv.get_data_for_hold_out_cross_validation();
+% if data_normalized
+%     data4cv.normalize_data();
+% end
 [D, N] = size(X_train);
 %% preparing models to train/test for mdl_iterator
 %[D_out, ~] = size(y_train);
