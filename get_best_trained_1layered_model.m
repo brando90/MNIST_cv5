@@ -109,8 +109,10 @@ y_mean = mean(Y_train,2); % (D_out x 1) mean of coordinate/var/feature
 y_std = repmat( y_std', [K,1]); % (K x D_out) for c = (K x D_out)
 y_mean = repmat( y_mean', [K,1]); % (K x D_out) for c = (K x D_out)  
 %% get errors of all initilization models
-mdl_error_train_all_inits = zeros(nb_inits,1); % (nb_inits x 1)
-mdl_error_test_all_inits = zeros(nb_inits,1); % (nb_inits x 1)
+h_mdl_error_train_all_inits = zeros(nb_inits,1); % (nb_inits x 1)
+h_mdl_error_test_all_inits = zeros(nb_inits,1); % (nb_inits x 1)
+kernel_mdl_error_train_all_inits = zeros(nb_inits,1); % (nb_inits x 1)
+hkernel_mdl_error_test_all_inits = zeros(nb_inits,1); % (nb_inits x 1)
 error_train_all_iterations = zeros(nb_inits,nb_iterations+1); % (nb_inits x nb_iterations)
 error_test_all_iterations = zeros(nb_inits,nb_iterations+1); % (nb_inits x nb_iterations)
 all_kernel_models = cell([nb_inits,1]);
@@ -225,8 +227,10 @@ for init_index=1:nb_inits
        error('The train function you gave: %s does not exist', train_func_name);
     end
     %% Collect model information
-    mdl_error_train_all_inits(init_index) = compute_Hf_sq_error(X_train, Y_train, h_mdl );
-    mdl_error_test_all_inits(init_index) = compute_Hf_sq_error(X_test, Y_test, h_mdl );
+    kernel_mdl_error_train_all_inits(init_index) = compute_Hf_sq_error(X_train, Y_train, kernel_mdl );
+    kernel_mdl_error_test_all_inits(init_index) = compute_Hf_sq_error(X_test, Y_test, kernel_mdl );
+    h_mdl_error_train_all_inits(init_index) = compute_Hf_sq_error(X_train, Y_train, h_mdl );
+    h_mdl_error_test_all_inits(init_index) = compute_Hf_sq_error(X_test, Y_test, h_mdl );
     all_kernel_models{init_index} = kernel_mdl;
     all_h_mdl_models{init_index} = h_mdl;
     error_train_all_iterations(init_index, :) = iteration_errors_train;
@@ -257,7 +261,8 @@ vname=@(x) inputname(1);
 
 file_name_mdl_error_train_test_all_inits = sprintf('result_error_train_test_all_inits_id%d',task_id);
 path_mdl_error_test_train_all_inits  = sprintf('%s%s',results_path,file_name_mdl_error_train_test_all_inits)
-save(path_mdl_error_test_train_all_inits, vname(mdl_error_train_all_inits), vname(mdl_error_test_all_inits), ...
+save(path_mdl_error_test_train_all_inits, vname(h_mdl_error_train_all_inits), vname(h_mdl_error_test_all_inits), ...
+    vname(kernel_mdl_error_train_all_inits), vname(kernel_mdl_error_test_all_inits), ...
     vname(center), vname(nb_iterations) );
 
 file_name_mdl_error_iterations = sprintf('mdl_error_iterations_id%d',task_id);
@@ -271,12 +276,34 @@ save(path_mdl_all_mdls_inits, vname(all_kernel_models), vname(all_h_mdl_models),
 file_name_git_info = sprintf('git_info_id%d',task_id);
 path_git_info = sprintf('%s%s',results_path,file_name_git_info)
 save(path_git_info, vname(git_hash_string_mnist_cv4), vname(git_hash_string_hbf_research_data), vname(git_hash_string_hbf_research_ml_model_library) );
+%% write results to file
+%means
+average_train_error_h_mdl = mean(h_mdl_error_train_all_inits); % (nb_inits x 1)
+average_test_error_h_mdl = mean(h_mdl_error_test_all_inits); % (nb_inits x 1)
+std_train_error_h_mdl = mean(h_mdl_error_train_all_inits); % (nb_inits x 1)
+std_test_error_h_mdl = mean(h_mdl_error_test_all_inits); % (nb_inits x 1)
+%std
+average_train_error_kernel_mdl = std(kernel_mdl_error_train_all_inits); % (nb_inits x 1)
+average_test_error_kernel_mdl = std(kernel_mdl_error_test_all_inits); % (nb_inits x 1)
+std_train_error_kernel_mdl = std(kernel_mdl_error_train_all_inits); % (nb_inits x 1)
+std_test_error_kernel_mdl = std(kernel_mdl_error_test_all_inits); % (nb_inits x 1)
+
+result_file_name = sprintf('results_om_id%d.m',task_id);
+
+result_path_file = sprintf('%s%s',results_path,result_file_name)
+[fileID,~] = fopen(result_path_file, 'w')
+fprintf(fileID, 'task_id=%d; \n center= %d; \n average_train_error_h_mdl=%d; \n average_test_error_h_mdl=%d; \n std_train_error_h_mdl=%d; \n std_test_error_h_mdl=%d; \n  average_train_error_kernel_mdl=%d; \n average_test_error_kernel_mdl=%d; \n std_train_error_kernel_mdl=%d; \n std_test_error_kernel_mdl=%d; \n ', ...
+    task_id,center, ...
+    average_train_error_h_mdl, average_test_error_h_mdl, std_train_error_h_mdl, std_test_error_h_mdl, ...
+    average_train_error_kernel_mdl, average_test_error_kernel_mdl, std_train_error_kernel_mdl, std_test_error_kernel_mdl );
+
 %% save my own code
 my_self = 'get_best_trained_1layered_model.m';
 source = sprintf('./%s', my_self);
 destination = sprintf('%s', results_path)
 copyfile(source, destination);
 %% write time elapsed to file
+time_passed = toc;
 [secs, minutes, hours, ~] = time_elapsed(nb_iterations, time_passed )
 time_file_name = sprintf('time_duration_om_id%d.m',task_id);
 path_file = sprintf('%s%s',results_path,time_file_name);
